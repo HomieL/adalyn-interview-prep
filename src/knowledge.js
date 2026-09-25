@@ -3,6 +3,7 @@ import { state, gch, save } from './state.js'
 import { t } from './i18n.js'
 import { esc, md2h, showLoading, showErr } from './util.js'
 import { buildAnalysis } from './analysis.js'
+import { TARGET } from './target.js'
 
 export function renderKnowledge() {
   const c = gch(); if (!c) return
@@ -53,7 +54,7 @@ export function renderKnowledge() {
           ${srcHtml}
           <span>·</span>
           <span>${new Date(c.createdAt).toLocaleDateString(state.lang === 'en' ? 'en-US' : 'zh-CN')}</span>
-          <span class="meta-chip">L5</span>
+          <span class="meta-chip">${TARGET.short}</span>
           ${c.analysis ? `<button class="btn-rebuild" onclick="rebuildKnowledge()" title="${t('重新生成学习框架', 'Regenerate knowledge framework')}">↺ ${t('重新生成', 'Regenerate')}</button>` : ''}
         </div>
       </div>

@@ -1,7 +1,7 @@
 // ── API KEY + PROVIDERS ────────────────────────────────────────────────────────
 import { invoke, Channel } from '@tauri-apps/api/core'
 import { isTauri } from './platform.js'
-import { state } from './state.js'
+import { state, KEYS } from './state.js'
 import { t } from './i18n.js'
 import { modal, closeModal, esc } from './util.js'
 import { supabaseConfigured } from './supabase.js'
@@ -13,7 +13,7 @@ export async function initApiKey() {
   try {
     state.apiKey = isTauri
       ? await invoke('load_api_key')
-      : (localStorage.getItem('l5_api_key') || '')
+      : (localStorage.getItem(KEYS.apiKey) || '')
   } catch (e) {
     state.apiKey = ''
   }
@@ -26,9 +26,9 @@ export async function initApiKey() {
       state.openaiKey  = cfg.openaiKey  || ''
       state.provider   = cfg.provider   || 'claude'
     } else {
-      state.geminiKey  = localStorage.getItem('l5_gemini_key')  || ''
-      state.openaiKey  = localStorage.getItem('l5_openai_key')  || ''
-      state.provider   = localStorage.getItem('l5provider')     || 'claude'
+      state.geminiKey  = localStorage.getItem(KEYS.geminiKey)  || ''
+      state.openaiKey  = localStorage.getItem(KEYS.openaiKey)  || ''
+      state.provider   = localStorage.getItem(KEYS.provider)     || 'claude'
     }
   } catch (e) {
     state.geminiKey = ''; state.openaiKey = ''
@@ -170,7 +170,7 @@ export function showSettings(required = false) {
 /** Called from inline onclick in settings modal to highlight active provider. */
 export function switchProvider(p) {
   state.provider = p
-  localStorage.setItem('l5provider', p)
+  localStorage.setItem(KEYS.provider, p)
   // Update button highlights without re-opening modal
   document.querySelectorAll('.provider-btn').forEach(btn => {
     btn.classList.toggle('active', btn.textContent.toLowerCase() === p ||
@@ -231,10 +231,10 @@ export async function saveApiKey() {
         provider: state.provider,
       })
     } else {
-      if (claudeKey) localStorage.setItem('l5_api_key', claudeKey)
-      localStorage.setItem('l5_gemini_key', geminiKey)
-      localStorage.setItem('l5_openai_key', openaiKey)
-      localStorage.setItem('l5provider', state.provider)
+      if (claudeKey) localStorage.setItem(KEYS.apiKey, claudeKey)
+      localStorage.setItem(KEYS.geminiKey, geminiKey)
+      localStorage.setItem(KEYS.openaiKey, openaiKey)
+      localStorage.setItem(KEYS.provider, state.provider)
     }
     if (claudeKey) state.apiKey = claudeKey
     state.geminiKey = geminiKey

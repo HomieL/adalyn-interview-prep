@@ -291,7 +291,7 @@ export function addJobPosting() {
     <div class="modal-title">💼 ${t('添加求职职位', 'Add Job Posting')}</div>
     <div style="margin-bottom:12px">
       <label style="font-size:12px;color:var(--muted2);display:block;margin-bottom:4px">${t('职位 URL', 'Job Posting URL')}</label>
-      <input class="modal-input" id="jp_url" placeholder="https://careers.google.com/jobs/…" style="width:100%">
+      <input class="modal-input" id="jp_url" placeholder="https://careers.example.com/jobs/…" style="width:100%">
     </div>
     <p class="modal-note">${t('将自动抓取页面并用 AI 提取公司、职位、职责和技能。', 'The page will be fetched and analyzed with AI to extract company, title, responsibilities, and skills.')}</p>
     <div class="modal-actions">
@@ -329,7 +329,7 @@ export async function submitJobPosting() {
   if (sub) sub.textContent = t('Claude 正在提取职位信息…', 'Claude is extracting job details…')
 
   try {
-    const sys = 'You are a job analysis assistant. Given the text of a job posting, extract structured information. Return ONLY a valid JSON object with these exact keys: company (string — official company name, e.g. "Google"), title (string — job title), level (string — seniority level, e.g. "L5 / Senior"), teamFocus (string — team or domain area, 1 sentence), summary (string — 1-2 sentence TL;DR of the role), responsibilities (array of strings — top 5-8 key responsibilities, each ≤15 words), requiredSkills (array of strings — must-have skills), niceToHaveSkills (array of strings — preferred but optional skills). If a field is unknown use empty string or empty array.'
+    const sys = 'You are a job analysis assistant. Given the text of a job posting, extract structured information. Return ONLY a valid JSON object with these exact keys: company (string — official company name, e.g. "Google"), title (string — job title), level (string — seniority level, e.g. "Intern", "New Grad", "L5 / Senior"), teamFocus (string — team or domain area, 1 sentence), summary (string — 1-2 sentence TL;DR of the role), responsibilities (array of strings — top 5-8 key responsibilities, each ≤15 words), requiredSkills (array of strings — must-have skills), niceToHaveSkills (array of strings — preferred but optional skills). If a field is unknown use empty string or empty array.'
     const raw = await claudeJSON(sys, 'Job posting text:\n' + rawText, 2000, '{')
     const parsed = JSON.parse(raw)
 

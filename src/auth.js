@@ -56,7 +56,7 @@ export async function signIn(email) {
     return
   }
   const redirectTo = isTauri
-    ? 'l5prep://auth'
+    ? 'adalynprep://auth'
     : window.location.origin + '/auth/callback'
   const { error } = await supabase.auth.signInWithOtp({
     email,

@@ -28,7 +28,7 @@ export function bqHeader() {
         <span class="bh-icon">🎯</span>
         <div>
           <div class="bh-h1">${t('BQ 备考', 'BQ Prep')}</div>
-          <div class="bh-sub">${t('Google L5 高频行为题库 + STAR 故事库', 'Google L5 BQ bank + STAR story builder')}</div>
+          <div class="bh-sub">${t('实习高频行为题库 + STAR 故事库', 'Intern BQ bank + STAR story builder')}</div>
         </div>
       </div>
       <div class="bh-tabs">

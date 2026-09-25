@@ -1,6 +1,8 @@
-# L5 Prep — Feature Scope & Roadmap
+# Adalyn Interview Prep — Feature Scope & Roadmap
 
-Current state: Tauri desktop app (Windows) with AI-powered knowledge chapters, multi-mode quiz (multiple-choice + flashcards), progress dashboard, resume analyzer, BQ prep (BQ store + STAR story builder), and job application prep with resume bullet matching.
+Target: Software Engineering Intern interviews (Summer 2027 cycle). The interview target lives in `src/target.js`; every AI prompt calibrates against it.
+
+Current state: Tauri desktop app with AI-powered knowledge chapters, multi-mode quiz (multiple-choice + flashcards), coding practice with an AI interviewer, OOD design practice, progress dashboard, resume analyzer, BQ prep (BQ store + STAR story builder), and job application prep with resume bullet matching.
 
 ---
 
@@ -16,15 +18,21 @@ Third study tab alongside Knowledge and Quiz. Claude generates open-ended flashc
 Sidebar shortcut and home-screen view aggregating: overall readiness score, per-chapter mastery heat-map (green/yellow/red), weakest-chapter callout with quick-jump, total quiz questions answered, and chapter-level quiz + flashcard history.
 
 ### ✅ Resume Analyzer
-Multi-resume library. Each resume uploaded via PDF (Rust `pdf-extract`) or pasted text + filename chip UX. Claude extracts experience bullets grouped by role. Each bullet: click to generate L5-calibrated HM deep-dive questions, record and polish answers, analyze answer quality. Inline loading states; collapsible sections.
+Multi-resume library. Each resume uploaded via PDF (Rust `pdf-extract`) or pasted text + filename chip UX. Claude extracts experience bullets grouped by role. Each bullet (work experience or project): click to generate intern-calibrated resume deep-dive questions, record and polish answers, analyze answer quality. Inline loading states; collapsible sections.
 
 ### ✅ BQ Prep — BQ Store + STAR Story Builder *(bonus, beyond original scope)*
 Standalone sidebar section decoupled from Resume Analyzer. Two sub-tabs:
-- **BQ Store**: 16 pre-loaded Google L5 behavioral questions across 8 categories (Ambiguity, Leadership, Technical Depth, Conflict, Failure, Execution, Cross-functional, Mentorship). User can add custom BQs. Each BQ links to a STAR story and one-click fine-tunes a ≤250-word Claude-crafted answer targeted to that specific question.
+- **BQ Store**: 16 pre-loaded intern behavioral questions across 8 categories (Motivation, Learning, Teamwork, Conflict, Failure, Ownership, Ambiguity, User Focus), including "Tell me about yourself" and "Why software engineering?". User can add custom BQs. Each BQ links to a STAR story and one-click fine-tunes a ≤250-word Claude-crafted answer targeted to that specific question.
 - **Story Store**: Full STAR story editor (Situation / Task / Action / Result) with competency tagging and AI polish.
 
 ### ✅ Job Application Preparation
 Standalone sidebar section. Company-grouped homepage (levels.fyi-style card grid). Add a job posting by URL → `fetch_url` (Tauri) → Claude extracts company, title, level, summary, responsibilities, required/nice-to-have skills → auto-groups under company card. Posting detail: link a resume, then one-click bullet match (Claude scores each resume bullet 0–10 for relevance, sorted descending with relevance note).
+
+### ✅ Coding Practice
+17 intern-level problems across 11 patterns (arrays & hashing, two pointers, sliding window, stack, binary search, linked list, trees, graphs, heap, intervals, DP), plus AI-generated problems per pattern. The flow mirrors a real round: write your approach and complexity first, code in Python / Java / TypeScript / C++, ask for up to 3 progressive hints, then submit to an AI interviewer that returns a rubric scorecard (correctness, complexity, edge cases, code quality, communication), a hire verdict, and a follow-up question. Attempts and verdict history persist and feed the dashboard.
+
+### ✅ OOD Design Practice
+10 classic object-oriented design problems with Python/Java skeletons and test scenarios; AI reviews class design, encapsulation, patterns, and scenario coverage.
 
 ---
 
@@ -33,13 +41,9 @@ Standalone sidebar section. Company-grouped homepage (levels.fyi-style card grid
 ### 1. Mock Interview Mode (Timed Session)
 **Problem**: Real interviews are timed and mixed-topic. Practicing one topic at a time doesn't simulate pressure.
 
-**Idea**: Folder-scoped timed session — user selects an entire folder (e.g. "Distributed Systems") and a duration (30 / 45 / 60 min). The session:
-- Draws questions across all topics in the folder
-- Includes both concept questions and scenario/design questions that connect multiple topics (e.g. "You're designing a rate limiter for a global API — how do the consistency tradeoffs from your Raft and Bigtable knowledge apply here?")
-- Runs a visible countdown timer
-- Scores the full session at the end with a per-topic breakdown and an overall readiness estimate
+**Idea**: A 45-minute session shaped like a real intern round: 5 minutes of behavioral questions drawn from the BQ Store, then one or two coding problems picked from patterns the user is weakest in, with a countdown timer. The AI interviewer asks follow-ups after each answer and scores the whole session at the end.
 
-**Why L5-relevant**: Google L5 rounds are not topic-siloed. An interviewer might start with "walk me through how Kubernetes schedules a pod" and pivot to "how would you design a distributed scheduler from scratch?" in the same 45-minute round. Cross-topic synthesis is the real test.
+**Why it matters**: Intern loops are usually two 45-minute coding rounds with a few behavioral questions mixed in. Practicing under that time pressure, and switching between talking and coding, is the real test.
 
 ---
 
@@ -49,18 +53,16 @@ Standalone sidebar section. Company-grouped homepage (levels.fyi-style card grid
 
 ---
 
-### 3. System Design Scratchpad
-**Problem**: System design is 50% of an L5 interview but the app has zero coverage.
-**Idea**: A freeform text editor per chapter with structured prompts built in:
-- Requirements clarification template
-- Capacity estimation calculator (QPS → storage → bandwidth)
-- Component checklist (LB, cache, DB, queue, CDN…)
-- AI critique button: paste your design notes, Claude reviews against L5 rubric
-**Why it matters**: This is the single biggest gap between the current app and a complete L5 prep tool.
+### 3. Resume Project Deep-Dive Drill
+**Problem**: Interviewers often open with "walk me through a project on your resume" and keep drilling down.
+**Idea**: Pick a project from the Resume Analyzer; the AI interviewer asks one question at a time and follows up based on the previous answer (how it works, why this design, what broke, what you'd change), then grades the whole thread.
 
 ---
 
 ## Tier 2 — Nice to Have
+
+### System Design Scratchpad
+Rarely asked of interns, but useful later for new-grad and full-time loops: requirements template, capacity estimates, component checklist, and AI critique.
 
 ### 4. Export to Anki / PDF
 Export study notes as Anki flashcard deck (`.apkg`) or clean PDF for offline review.
@@ -75,7 +77,7 @@ Text-to-speech reads the question aloud; user answers by clicking an option. Use
 
 ## What NOT to Build (Scope Guard)
 
-- **In-app code editor / LeetCode clone**: Too much engineering for marginal benefit; just link out.
+- **Code execution / online judge**: Coding Practice reviews code with an AI interviewer; running code against hidden test suites is out of scope.
 - **Collaborative / multi-user**: Desktop-only, single-user by design.
 - **Video content / YouTube integration**: Out of scope; this is a notes + AI tool.
 - **Networking / leaderboards**: No backend, all data stays local.
@@ -92,9 +94,12 @@ Text-to-speech reads the question aloud; user answers by clicking an option. Use
 | ✅ Done | Resume Analyzer + STAR Builder | M | Very High |
 | ✅ Done | BQ Prep (BQ Store + Story Store) | M | Very High |
 | ✅ Done | Job Application Preparation | M | Very High |
-| ⬜ Next | Mock Interview Mode (timed, folder-scoped) | M | Very High |
+| ✅ Done | Coding Practice (AI interviewer scorecard) | M | Very High |
+| ✅ Done | OOD Design Practice | M | High |
+| ⬜ Next | Mock Interview Mode (timed intern round) | M | Very High |
 | ⬜ Next | Weak-Spot AI Analysis | M | High |
-| ⬜ Next | System Design Scratchpad | L | Very High |
+| ⬜ Next | Resume Project Deep-Dive Drill | M | High |
+| ⬜ Later | System Design Scratchpad | L | Low (for interns) |
 | ⬜ Later | Export / Study Plan / Voice | L | Low-Med |
 
 ---
@@ -125,7 +130,7 @@ Text-to-speech reads the question aloud; user answers by clicking an option. Use
 ---
 
 ### VII. Universal Career Interview Platform
-**Vision**: Expand beyond L5 SDE at Google to support a wide range of job interviews across industries, levels, and roles.
+**Vision**: Expand beyond SDE internships to support a wide range of job interviews across industries, levels, and roles.
 
 **Examples of scope expansion**:
 - Engineering levels: L3–L7, Staff, Principal, VP Engineering
@@ -193,7 +198,7 @@ Text-to-speech reads the question aloud; user answers by clicking an option. Use
 
 **Model routing strategy**:
 - **Heavy reasoning tasks** (knowledge framework generation, system design critique, full resume analysis): frontier model (e.g. Claude Opus / GPT-4o)
-- **Medium tasks** (quiz generation, STAR story polish, L5 feedback): mid-tier model (e.g. Claude Sonnet / GPT-4o-mini)
+- **Medium tasks** (quiz generation, STAR story polish, answer feedback): mid-tier model (e.g. Claude Sonnet / GPT-4o-mini)
 - **Lightweight tasks** (flashcard generation, short answer polish, inline suggestions): fast/cheap model (e.g. Claude Haiku / Gemini Flash)
 - Routing rules are defined server-side and can be updated without a client release
 

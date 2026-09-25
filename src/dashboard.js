@@ -2,6 +2,7 @@
 import { state } from './state.js'
 import { t } from './i18n.js'
 import { esc } from './util.js'
+import { codingStats } from './coding.js'
 
 export function renderDashboard() {
   const chapters = state.S.chapters
@@ -12,13 +13,15 @@ export function renderDashboard() {
           <div class="dash-icon">📊</div>
           <div>
             <div class="dash-title">${t('备考进度总览', 'Progress Dashboard')}</div>
-            <div class="dash-sub">${t('追踪每章学习进度、测验成绩与 Flashcard 掌握情况', 'Track quiz performance and flashcard mastery across all chapters')}</div>
+            <div class="dash-sub">${t('追踪编程练习、行为面试准备与各章节学习进度', 'Track coding practice, behavioral prep, and study progress')}</div>
           </div>
         </div>
-        <div class="empty-state" style="padding:60px 0">
+        ${_prepHtml()}
+        <div class="empty-state" style="padding:40px 0">
           <div class="empty-icon">📚</div>
           <div class="empty-text">${t('暂无章节。<br>从欢迎页面添加技术文档开始备考。', 'No chapters yet.<br>Add a technical doc from the welcome page to start.')}</div>
         </div>
+        ${_buildRecommendations([])}
       </div>`
     return
   }
@@ -70,7 +73,7 @@ export function renderDashboard() {
         <div class="dash-icon">📊</div>
         <div>
           <div class="dash-title">${t('备考进度总览', 'Progress Dashboard')}</div>
-          <div class="dash-sub">${t('追踪每章学习进度、测验成绩与 Flashcard 掌握情况', 'Track quiz performance and flashcard mastery across all chapters')}</div>
+          <div class="dash-sub">${t('追踪编程练习、行为面试准备与各章节学习进度', 'Track coding practice, behavioral prep, and study progress')}</div>
         </div>
       </div>
 
@@ -95,7 +98,7 @@ export function renderDashboard() {
 
       <div class="dash-readiness">
         <div class="dash-readiness-label">
-          ${t('整体备考就绪度', 'Overall L5 Readiness')}
+          ${t('整体备考就绪度', 'Overall Readiness')}
           <span class="dash-readiness-pct">${readinessPct}%</span>
         </div>
         <div class="dash-readiness-bar">
@@ -107,6 +110,8 @@ export function renderDashboard() {
           <span class="dash-legend-item"><span class="dash-dot" style="background:var(--muted2)"></span>${notStarted} ${t('未开始', 'Not Started')}</span>
         </div>
       </div>
+
+      ${_prepHtml()}
 
       <div class="dash-section-hd">${t('章节详情', 'Chapter Breakdown')}</div>
       <div class="dash-chapter-list">
@@ -148,17 +153,79 @@ export function renderDashboard() {
     </div>`
 }
 
+// ── Coding + behavioral prep stats ─────────────────────────────────────────────
+
+function _bqStats() {
+  const bh = state.S.behavioral || {}
+  const stories = bh.stories || []
+  const bqs = bh.bqStore || []
+  const linked = bqs.filter(b => b.linkedStoryId && stories.some(s => s.id === b.linkedStoryId)).length
+  const answered = (bh.resumes || []).flatMap(r => r.bullets || []).flatMap(b => b.hmQuestions || []).filter(q => q.answer?.trim()).length
+  return { total: bqs.length, linked, stories: stories.length, answered }
+}
+
+function _prepHtml() {
+  const cs = codingStats()
+  const bq = _bqStats()
+  return `
+      <div class="dash-section-hd">${t('面试准备', 'Interview Prep')}</div>
+      <div class="dash-stat-grid">
+        <div class="dash-stat-card" style="cursor:pointer" onclick="selCoding()">
+          <div class="dash-stat-n">${cs.solved}/${cs.total}</div>
+          <div class="dash-stat-l">💻 ${t('编程题已通过', 'Coding Solved')}</div>
+        </div>
+        <div class="dash-stat-card" style="cursor:pointer" onclick="selBqPrep()">
+          <div class="dash-stat-n">${bq.linked}/${bq.total}</div>
+          <div class="dash-stat-l">🎯 ${t('BQ 已关联故事', 'BQs with a Story')}</div>
+        </div>
+        <div class="dash-stat-card" style="cursor:pointer" onclick="selBqPrep()">
+          <div class="dash-stat-n">${bq.stories}</div>
+          <div class="dash-stat-l">📖 ${t('STAR 故事', 'STAR Stories')}</div>
+        </div>
+        <div class="dash-stat-card" style="cursor:pointer" onclick="selResume()">
+          <div class="dash-stat-n">${bq.answered}</div>
+          <div class="dash-stat-l">📄 ${t('简历追问已作答', 'Resume Q&As')}</div>
+        </div>
+      </div>`
+}
+
+function _prepRecs() {
+  const recs = []
+  const cs = codingStats()
+  if (cs.untouchedPatterns.length) {
+    const names = cs.untouchedPatterns.slice(0, 4).join(', ') + (cs.untouchedPatterns.length > 4 ? '…' : '')
+    recs.push({ onclick: 'selCoding()', title: t('编程练习', 'Coding Practice'),
+      sub: t(`还未练习的题型：${names}`, `Patterns not practiced yet: ${names}`) })
+  }
+  const bq = _bqStats()
+  if (bq.total > bq.linked) {
+    recs.push({ onclick: 'selBqPrep()', title: t('BQ 备考', 'BQ Prep'),
+      sub: t(`${bq.total - bq.linked} 道行为题还没有关联 STAR 故事`, `${bq.total - bq.linked} behavioral questions have no STAR story yet`) })
+  }
+  return recs
+}
+
 function _buildRecommendations(rows) {
   const needs = rows.filter(r => r.status === 'new' || (r.avgScore !== null && r.avgScore < 70))
-  if (needs.length === 0) return `
+  const prepRecs = _prepRecs()
+  const prepItems = prepRecs.map(r => `
+        <div class="dash-rec-item" onclick="${r.onclick}">
+          <span class="dash-rec-dot"></span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(r.title)}</div>
+            <div style="font-size:11px;color:var(--muted)">${esc(r.sub)}</div>
+          </div>
+        </div>`).join('')
+  if (needs.length === 0 && prepRecs.length === 0) return `
     <div class="dash-section-hd" style="margin-top:20px">🎉 ${t('备考建议', 'Recommendations')}</div>
     <div class="dash-rec-box dash-rec-great">
-      ${t('所有章节表现良好！继续保持，冲击 L5！', 'All chapters looking great! Keep it up — you\'re L5-ready!')}
+      ${t('所有章节表现良好！继续保持，拿下实习 offer！', 'All chapters looking great! Keep it up — you\'re on track for that internship!')}
     </div>`
 
   return `
     <div class="dash-section-hd" style="margin-top:20px">💡 ${t('备考建议', 'Recommendations')}</div>
     <div class="dash-rec-list">
+      ${prepItems}
       ${needs.map(({ c, status, avgScore }) => `
         <div class="dash-rec-item" onclick="selCh('${c.id}')">
           <span class="dash-rec-dot"></span>

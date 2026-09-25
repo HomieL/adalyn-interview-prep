@@ -3,6 +3,7 @@ import { state, save, uid, BH_COMPETENCIES } from '../state.js'
 import { t } from '../i18n.js'
 import { esc, showLoading } from '../util.js'
 import { claudeJSON } from '../api.js'
+import { TARGET } from '../target.js'
 import { getBh, bqHeader } from './shared.js'
 import { micBtn } from '../speech.js'
 import { exportStory, exportAllStories } from '../export.js'
@@ -317,7 +318,7 @@ export async function extractStar() {
       ? '\n\nSource experience bullet from resume (incorporate any specific tech, metrics, scope, or outcomes from this to enrich the extraction — do not invent facts not in the draft):\nRole: ' + resolved.bullet.role + '\nBullet: "' + resolved.bullet.text + '"'
       : ''
 
-    const sys = 'You are an L5 interview coach. Given a candidate\'s free-form story draft, extract the STAR structure. Return ONLY a JSON object with exactly these keys: situation (2-3 sentences: background and context, what was at stake), task (1-2 sentences: the candidate\'s specific responsibility), action (3-5 sentences: what the candidate personally did, step by step — use "I" not "we"), result (2-3 sentences: measurable outcomes and what was learned). Preserve the candidate\'s voice and specific details. Do not invent information not present in the draft.'
+    const sys = 'You are a behavioral interview coach for ' + TARGET.role + ' candidates. Given a candidate\'s free-form story draft, extract the STAR structure. Return ONLY a JSON object with exactly these keys: situation (2-3 sentences: background and context, what was at stake), task (1-2 sentences: the candidate\'s specific responsibility), action (3-5 sentences: what the candidate personally did, step by step — use "I" not "we"), result (2-3 sentences: measurable outcomes and what was learned). Preserve the candidate\'s voice and specific details. Do not invent information not present in the draft.'
     const raw = await claudeJSON(sys, 'Story draft:\n' + draft + bulletCtx, 900, '{')
     const parsed = JSON.parse(raw)
     // Fill textareas directly — no re-render, preserves scroll position
@@ -340,14 +341,14 @@ export async function polishStory() {
   }
   const storyId = saveStory(false)
   if (!storyId) return
-  showLoading(t('正在润色故事…', 'Polishing story…'), t('Claude 正在将您的 STAR 故事优化为 L5 面试水准', 'Claude is enhancing your STAR story for L5 interviews'))
+  showLoading(t('正在润色故事…', 'Polishing story…'), t('Claude 正在将您的 STAR 故事优化为实习面试水准', 'Claude is polishing your STAR story for intern interviews'))
   try {
     const resolved = _resolveBulletRef()
     const bulletCtx = resolved
       ? '\n\nSource experience bullet (use any specific metrics, tech stack, or scope from this as grounding — do not invent new facts):\nRole: ' + resolved.bullet.role + '\nBullet: "' + resolved.bullet.text + '"'
       : ''
 
-    const sys = `You are a senior Google L5 interview coach. Polish this STAR story to be crisp, impact-forward, and L5-appropriate. Rules: Always use "I" (not "we"). Lead each section with the most impactful statement. Remove filler. Keep measurable outcomes prominent. Make individual contribution unmistakably clear. Return ONLY a JSON object: {"situation":"...","task":"...","action":"...","result":"..."}`
+    const sys = `You are a behavioral interview coach for ${TARGET.role} candidates. Polish this STAR story to be crisp, specific, and right for an intern interview. School, personal, and prior-career projects are all valid material; do not inflate scope. Rules: Always use "I" (not "we"). Lead each section with the most impactful statement. Remove filler. Keep measurable outcomes prominent. Make individual contribution unmistakably clear. Return ONLY a JSON object: {"situation":"...","task":"...","action":"...","result":"..."}`
     const userMsg = 'Situation: ' + form.situation + '\nTask: ' + form.task + '\nAction: ' + form.action + '\nResult: ' + form.result + bulletCtx
     const raw = await claudeJSON(sys, userMsg, 2000, '{')
     const parsed = JSON.parse(raw)

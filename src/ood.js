@@ -2,6 +2,7 @@
 import { t } from './i18n.js'
 import { esc, md2h, showErr } from './util.js'
 import { claude, claudeStream } from './api.js'
+import { TARGET, TARGET_BAR } from './target.js'
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let _currentQ = null   // question id | null = list view
@@ -1448,8 +1449,10 @@ export async function oodAnalyze() {
   }
 
   const langLabel = _lang === 'python' ? 'Python' : 'Java'
-  const system = `You are a senior L5 software engineer conducting an OOD technical interview. \
-Review the candidate's ${langLabel} solution. Be specific, constructive, and actionable. Use Markdown.`
+  const system = `You are a software engineer conducting an object-oriented design interview with a ${TARGET.role} candidate. \
+Review the candidate's ${langLabel} solution. Be specific, constructive, and actionable. Use Markdown.
+
+${TARGET_BAR}`
 
   const userMsg = `## Problem: ${q.title}
 ${q.desc}
@@ -1476,8 +1479,8 @@ Composition vs inheritance used correctly? Any design patterns applied or missin
 ### 4. Test Scenario Coverage
 Walk through each numbered scenario — does the current design handle it? What gaps exist?
 
-### 5. L5-Level Critique
-What would a senior engineer flag as concerns? Thread safety? Scalability? Edge cases? Extensibility?
+### 5. Interviewer's Verdict
+Would this clear the intern bar? Name the one or two changes that would most improve it (edge cases, naming, extensibility), and one follow-up question an interviewer would likely ask next.
 
 Reference specific class/method names from the code in your feedback.`
 

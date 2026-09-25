@@ -1,4 +1,4 @@
-# L5 Prep — Cross-Platform, Cloud Sync & Accounts Plan
+# Adalyn Interview Prep — Cross-Platform, Cloud Sync & Accounts Plan
 
 > Status: **Draft** · Last updated: Feb 2026
 
@@ -23,7 +23,7 @@
 ┌─────────────────────────────────────────────────┐
 │  WebView2 / WKWebView / WebKitGTK                │
 │  Vite 5 · Vanilla JS modules                     │
-│  Data: localStorage key "l5v3" (JSON blob)       │
+│  Data: localStorage key "aip_data" (JSON blob)       │
 │  API key: Tauri secure keychain commands         │
 ├─────────────────────────────────────────────────┤
 │  Rust (Tauri 2.x)                                │
@@ -132,7 +132,7 @@ Speech recognition (`SpeechRecognition` API) is available on all three but relie
   },
   "plugins": {
     "deep-link": {
-      "desktop": { "schemes": ["l5prep"] }
+      "desktop": { "schemes": ["adalynprep"] }
     }
   }
 }
@@ -191,9 +191,9 @@ Code signing:
 User opens app (no session)
   → Shows sign-in screen (email input)
   → Calls supabase.auth.signInWithOtp({ email })
-  → Supabase sends email with link: l5prep://auth?token_hash=…&type=magiclink
+  → Supabase sends email with link: adalynprep://auth?token_hash=…&type=magiclink
   → User clicks link in email client
-  → OS routes l5prep:// to the app via deep-link plugin
+  → OS routes adalynprep:// to the app via deep-link plugin
   → Rust handler passes URL to frontend: window.emit('auth-callback', url)
   → JS calls supabase.auth.verifyOtp({ token_hash, type: 'magiclink' })
   → Session established — JWT stored via OS keychain (tauri-plugin-keychain)
@@ -240,19 +240,19 @@ exports:
 supabase.auth.signInWithOAuth({
   provider: 'google',
   options: {
-    // Desktop: OS routes l5prep:// back to the app via deep-link plugin
+    // Desktop: OS routes adalynprep:// back to the app via deep-link plugin
     // Web: redirects to the hosted callback page instead
-    redirectTo: isTauri ? 'l5prep://auth' : 'https://app.l5prep.com/auth/callback'
+    redirectTo: isTauri ? 'adalynprep://auth' : 'https://app.example.com/auth/callback'
   }
 })
-// Desktop: Opens system browser → Google consent → redirects to l5prep://auth?code=…
+// Desktop: Opens system browser → Google consent → redirects to adalynprep://auth?code=…
 //          Deep-link handler calls supabase.auth.exchangeCodeForSession(code)
 // Web:     Browser redirects to /auth/callback → same PKCE handler as magic link (§5.3)
 ```
 
 Requires Google Cloud Console OAuth app with **both** redirect URIs registered:
-- `l5prep://auth` (desktop)
-- `https://app.l5prep.com/auth/callback` (web)
+- `adalynprep://auth` (desktop)
+- `https://app.example.com/auth/callback` (web)
 
 Also requires Supabase Google provider configuration and macOS App Transport Security exception (handled automatically by WKWebView for `https`).
 
@@ -311,9 +311,9 @@ Exports:
 ### 7.3 Save flow (modified)
 
 ```
-Current:  save() → localStorage.setItem('l5v3', JSON.stringify(state.S))
+Current:  save() → localStorage.setItem('aip_data', JSON.stringify(state.S))
 
-New:      save() → localStorage.setItem('l5v3', …)   ← keep for offline
+New:      save() → localStorage.setItem('aip_data', …)   ← keep for offline
                  → sync.schedulePush()                ← debounced cloud push
 ```
 
@@ -414,7 +414,7 @@ This is fully automatic. No manual export/import needed.
 ### Phase 2 — Authentication (magic link)
 **Effort: ~3–4 days**
 - Add Supabase JS client (`@supabase/supabase-js`)
-- Add `tauri-plugin-deep-link` + register `l5prep://` scheme
+- Add `tauri-plugin-deep-link` + register `adalynprep://` scheme
 - Add `tauri-plugin-store` for encrypted token persistence
 - Create `src/auth.js` (signIn, signOut, session init)
 - Deep-link handler in `lib.rs` → emit `auth-callback` event to frontend
@@ -459,7 +459,7 @@ The goal: the exact same Vite JS bundle runs in a browser tab at a hosted URL. U
 
 | Feature | Desktop (Tauri) | Browser |
 |---|---|---|
-| OAuth callback | `l5prep://auth` deep-link | Redirect to `https://app.l5prep.com/auth/callback` (PKCE) |
+| OAuth callback | `adalynprep://auth` deep-link | Redirect to `https://app.example.com/auth/callback` (PKCE) |
 | JWT storage | `tauri-plugin-keychain` (OS keychain) | `localStorage` — acceptable because XSS surface is our own app |
 | PDF parsing | `read_pdf_file` Rust command | `<input type="file" accept=".pdf">` → text extraction via `pdf.js` |
 | Auto-updater | `tauri-plugin-updater` | Not applicable; users always load latest from server |
@@ -510,13 +510,13 @@ async function signIn(email) {
     // Magic link with custom deep-link callback
     await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: 'l5prep://auth' }
+      options: { emailRedirectTo: 'adalynprep://auth' }
     })
   } else {
     // PKCE flow: redirect to hosted callback page
     await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: 'https://app.l5prep.com/auth/callback' }
+      options: { emailRedirectTo: 'https://app.example.com/auth/callback' }
     })
   }
 }
@@ -627,7 +627,7 @@ The `anon` key is designed to be public — RLS enforces all access control.
 | Anthropic API key exposure | **Desktop**: stays in OS keychain (Tauri keychain), never sent to Supabase. **Web**: stored in `localStorage` — lower security than OS keychain, but the key is never transmitted to our servers and the XSS surface is our own first-party app |
 | Supabase anon key in binary | Intentionally public; RLS on `user_data` means it cannot be abused to read others' data |
 | JWT token storage | `tauri-plugin-keychain` → OS keychain (Credential Manager / macOS Keychain). `tauri-plugin-store` is an encrypted file, not the OS keychain — see §6.2 |
-| Deep-link hijacking | OS-level protocol registration; only the registered app handles `l5prep://` |
+| Deep-link hijacking | OS-level protocol registration; only the registered app handles `adalynprep://` |
 | Data at rest | Supabase encrypts data at rest (AES-256); local localStorage is unencrypted (low-sensitivity data) |
 | HTTPS only | Supabase endpoints are HTTPS; reqwest enforces TLS; WebView CSP can be tightened |
 
@@ -656,13 +656,13 @@ The `anon` key is designed to be public — RLS enforces all access control.
 
 **Same account, different desktops**: ✅ — core sync story. Sign in on your work Mac and home Windows PC with the same email; data syncs automatically.
 
-**Sign in from a browser**: ✅ — explicit Phase 5 goal. Open `app.l5prep.com` (or similar), sign in with the same email, and all your stories, BQs, and resume bullets are right there. No install needed.
+**Sign in from a browser**: ✅ — explicit Phase 5 goal. Open `app.example.com` (or similar), sign in with the same email, and all your stories, BQs, and resume bullets are right there. No install needed.
 
 ---
 
 ## 15. Open Questions
 
-1. **App identifier / domain** — `com.l5prep.app` is fine for development. A real domain is needed for macOS notarization and Google OAuth redirect URI configuration.
+1. **App identifier / domain** — `com.adalyn.interviewprep` is fine for development. A real domain is needed for macOS notarization and Google OAuth redirect URI configuration.
 2. **Pricing model** — Option A (user key) vs Option B (proxy subscription) needs a decision before Phase 4.
 3. **Account deletion / GDPR** — a "Delete my account and data" flow is required before any public launch; Supabase cascade deletes handle the data side automatically.
 4. **Multiple Supabase environments** — dev / staging / prod? For a personal tool, one project is fine initially.

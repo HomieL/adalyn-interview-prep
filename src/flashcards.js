@@ -3,6 +3,7 @@ import { state, gch, save, uid } from './state.js'
 import { t } from './i18n.js'
 import { esc, showLoading, showErr } from './util.js'
 import { claude } from './api.js'
+import { TARGET } from './target.js'
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
@@ -51,7 +52,8 @@ export async function generateFlashcards() {
     const digest = c.analysis
       ? c.analysis.slice(0, 3000)
       : (c.rawContent || '').slice(0, 5000)
-    const sys = `You are creating L5 SDE interview prep flashcards. Generate exactly 12 flashcards.
+    const sys = `You are creating ${TARGET.role} interview prep flashcards. Generate exactly 12 flashcards.
+Focus on fundamentals an intern candidate should be able to explain clearly in an interview.
 Mix: key term definitions (4), architectural/design concepts (4), and tradeoff or "why" questions (4).
 Return ONLY a valid JSON array — no markdown, no preamble:
 [{"front":"concise question or term (≤15 words)","back":"clear answer, 2-4 sentences with specifics"}]`

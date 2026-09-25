@@ -3,7 +3,7 @@
 // dedicated print frame. The OS "Save as PDF" dialog handles the rest.
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri } from './platform.js'
-import { state, save } from './state.js'
+import { state, save, KEYS, BQ_CATEGORIES } from './state.js'
 import { getBh } from './behavioral/shared.js'
 import { t } from './i18n.js'
 import { esc } from './util.js'
@@ -14,7 +14,7 @@ const BACKUP_VERSION = 1
 
 function _buildPayload() {
   return JSON.stringify({
-    l5backup: true,
+    aipBackup: true,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     lang: state.lang,
@@ -25,7 +25,7 @@ function _buildPayload() {
 /** Download a full JSON backup of all content (no API keys). */
 export async function exportBackup() {
   const json     = _buildPayload()
-  const fileName = `l5-backup-${new Date().toISOString().slice(0, 10)}.json`
+  const fileName = `interview-prep-backup-${new Date().toISOString().slice(0, 10)}.json`
 
   if (isTauri) {
     // Use native OS Save dialog via Rust command — WebView2 ignores <a download>
@@ -44,7 +44,8 @@ export async function exportBackup() {
 
 function _restoreFromJson(text) {
   const payload = JSON.parse(text)
-  if (!payload?.l5backup || !payload?.data) {
+  // l5backup: files exported before the app was renamed
+  if (!(payload?.aipBackup || payload?.l5backup) || !payload?.data) {
     alert(t('文件格式不正确，请选择由本应用导出的备份文件。', 'Invalid backup file. Please select a file exported by this app.'))
     return
   }
@@ -56,8 +57,8 @@ function _restoreFromJson(text) {
     )
   )
   if (!ok) return
-  localStorage.setItem('l5v3', JSON.stringify(payload.data))
-  if (payload.lang) localStorage.setItem('l5lang', payload.lang)
+  localStorage.setItem(KEYS.data, JSON.stringify(payload.data))
+  if (payload.lang) localStorage.setItem(KEYS.lang, payload.lang)
   window.location.reload()
 }
 
@@ -91,7 +92,7 @@ export async function importBackup() {
   input.click()
 }
 
-const CATEGORY_ORDER = ['Ambiguity', 'Leadership', 'Technical Depth', 'Conflict', 'Failure', 'Execution', 'Cross-functional', 'Mentorship']
+const CATEGORY_ORDER = BQ_CATEGORIES
 
 // ── Core print helper ─────────────────────────────────────────────────────────
 
@@ -108,7 +109,7 @@ function _printDoc(subtitle, bodyHtml) {
   frame.innerHTML =
     '<div class="print-doc">'
     + '<header class="print-header">'
-    + '<div class="print-brand">L5 Interview Prep</div>'
+    + '<div class="print-brand">Adalyn Interview Prep</div>'
     + '<div class="print-meta">' + esc(subtitle) + ' · ' + _dateStr() + '</div>'
     + '</header>'
     + bodyHtml
@@ -245,8 +246,9 @@ export function exportAllBqAnswers() {
 
   let bodyHtml = ''
   let first = true
-  CATEGORY_ORDER.forEach(cat => {
-    ;(groups[cat] || []).forEach(bq => {
+  // Iterate groups (not CATEGORY_ORDER) so questions in custom or legacy categories are included
+  Object.keys(groups).forEach(cat => {
+    groups[cat].forEach(bq => {
       const story = bq.linkedStoryId ? bh.stories.find(s => s.id === bq.linkedStoryId) : null
       if (!first) bodyHtml += '<div class="print-page-break"></div>'
       bodyHtml += _bqHtml(bq, story)

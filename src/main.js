@@ -1,5 +1,5 @@
 // ── ENTRY POINT (composition root) ────────────────────────────────────────────
-import { state, save, gch, uid, setSyncCallback } from './state.js'
+import { state, save, gch, uid, setSyncCallback, KEYS } from './state.js'
 import { t, applyLangStatics } from './i18n.js'
 import { modal, confirmModal, closeModal, showLoading, showErr } from './util.js'
 import { initApiKey, showSettings, saveApiKey, switchProvider, doSignIn, doSignOut } from './api.js'
@@ -22,6 +22,7 @@ import { renderBqPrep, openBqDetail, closeBqDetail, addBq, saveBq, deleteBq, lin
 import { renderJobPrep, openCompanyView, closeCompanyView, openPostingDetail, addJobPosting, submitJobPosting, deletePosting, connectResume, disconnectResume, showResumePicker, matchBullets } from './jobprep.js'
 import { renderAggregator, aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf } from './aggregator.js'
 import { renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze } from './ood.js'
+import { renderCoding, codingOpen, codingBackToList, codingSwitchLang, codingInput, codingCommit, codingHint, codingReview, codingGenerate, codingDeleteGenerated } from './coding.js'
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 
@@ -84,8 +85,15 @@ function selOod() {
 }
 
 
+function selCoding() {
+  state.activeCid = '__coding__'
+  renderSB()
+  document.getElementById('topbar').style.display = 'none'
+  renderCoding()
+}
+
 function setLang(l) {
-  state.lang = l; localStorage.setItem('l5lang', l)
+  state.lang = l; localStorage.setItem(KEYS.lang, l)
   applyLangStatics()
   closeModal()
   renderCurrent()
@@ -111,6 +119,9 @@ function renderCurrent() {
   } else if (state.activeCid === '__ood__') {
     document.getElementById('topbar').style.display = 'none'
     renderOod()
+  } else if (state.activeCid === '__coding__') {
+    document.getElementById('topbar').style.display = 'none'
+    renderCoding()
   } else if (state.activeCid && gch()) {
     document.getElementById('topbar').style.display = 'flex'
     document.getElementById('topbarTitle').textContent = gch().name
@@ -242,6 +253,9 @@ Object.assign(window, {
   aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf,
   // OOD Practice
   selOod, renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze,
+  // Coding Practice
+  selCoding, renderCoding, codingOpen, codingBackToList, codingSwitchLang, codingInput, codingCommit,
+  codingHint, codingReview, codingGenerate, codingDeleteGenerated,
   // Job Prep
   selJobPrep, renderJobPrep,
   openCompanyView, closeCompanyView, openPostingDetail,

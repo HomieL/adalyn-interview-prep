@@ -3,6 +3,22 @@
 version = 4
 
 [[package]]
+name = "adalyn-interview-prep"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "pdf-extract",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-deep-link",
+ "tauri-plugin-dialog",
+ "tokio",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1731,22 +1747,6 @@ dependencies = [
  "html5ever",
  "indexmap 2.13.0",
  "selectors",
-]
-
-[[package]]
-name = "l5-prep-desktop"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "pdf-extract",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-deep-link",
- "tauri-plugin-dialog",
- "tokio",
 ]
 
 [[package]]

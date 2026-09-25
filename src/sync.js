@@ -1,9 +1,9 @@
 // ── CLOUD SYNC ────────────────────────────────────────────────────────────────
-import { state } from './state.js'
+import { state, KEYS } from './state.js'
 import { supabase, supabaseConfigured } from './supabase.js'
 import { getUser } from './auth.js'
 
-const LS_SYNC_KEY = 'l5sync_ts'   // localStorage key for last-synced timestamp
+const LS_SYNC_KEY = KEYS.syncTs   // localStorage key for last-synced timestamp
 
 let _pendingPush   = false
 let _debounceTimer = null
@@ -54,7 +54,7 @@ export async function pullOnStart() {
       // Cloud is newer (another device was used) → merge and overwrite local
       state.S = _merge(state.S, data.data)
       // Call localStorage save directly to avoid re-triggering schedulePush
-      localStorage.setItem('l5v3', JSON.stringify(state.S))
+      localStorage.setItem(KEYS.data, JSON.stringify(state.S))
       _lastSyncedAt = data.updated_at
       localStorage.setItem(LS_SYNC_KEY, _lastSyncedAt)
       _setStatus('synced')

@@ -1,8 +1,9 @@
 // ── BEHAVIORAL — BQ STORE ─────────────────────────────────────────────────────
-import { state, save, uid } from '../state.js'
+import { state, save, uid, BQ_CATEGORIES } from '../state.js'
 import { t } from '../i18n.js'
 import { esc, modal, closeModal } from '../util.js'
 import { claudeStream } from '../api.js'
+import { TARGET } from '../target.js'
 import { getBh, bqHeader } from './shared.js'
 import { exportBqAnswer, exportAllBqAnswers } from '../export.js'
 
@@ -17,7 +18,7 @@ function _formatStory(story) {
   return parts.join('\n\n')
 }
 
-const CATEGORY_ORDER = ['Ambiguity', 'Leadership', 'Technical Depth', 'Conflict', 'Failure', 'Execution', 'Cross-functional', 'Mentorship']
+const CATEGORY_ORDER = BQ_CATEGORIES
 
 // ── BQ row HTML (extracted to avoid deep nesting) ─────────────────────────────
 
@@ -311,7 +312,7 @@ export async function tuneBqAnswer(bqId) {
 
   try {
     const storyText = story.polished || _formatStory(story)
-    const sys = 'You are a senior Google L5 SWE interview coach. Given a candidate\'s STAR story and a specific behavioral question, craft a concise, polished answer (under 250 words) that directly addresses the question. Use the STAR structure but prioritize the most relevant parts. Always use "I" not "we". Be specific and include metrics if mentioned. Start with a strong opening sentence. Return ONLY the answer text, no preamble.'
+    const sys = 'You are a behavioral interview coach for ' + TARGET.role + ' candidates. Given a candidate\'s STAR story and a specific behavioral question, craft a concise, polished answer (under 250 words) that directly addresses the question. Use the STAR structure but prioritize the most relevant parts. Always use "I" not "we". Be specific and include metrics if mentioned. Start with a strong opening sentence. Return ONLY the answer text, no preamble.'
     const userMsg = 'Behavioral Question: ' + bq.question + '\n\nCandidate\'s STAR Story:\n' + storyText
     bq.tunedAnswer = await claudeStream(sys, userMsg, 700, (accumulated) => {
       const el = document.getElementById('tuned-text-' + bqId)

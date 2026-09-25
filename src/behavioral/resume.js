@@ -3,6 +3,7 @@ import { state, save, uid } from '../state.js'
 import { t } from '../i18n.js'
 import { esc, showLoading } from '../util.js'
 import { claudeJSON, claudeStream } from '../api.js'
+import { TARGET, TARGET_BAR } from '../target.js'
 import { getBh, resumeHeader } from './shared.js'
 import { micBtn } from '../speech.js'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -162,7 +163,7 @@ function renderAddResume() {
         <div style="max-width:640px">
           <div class="star-section">
             <div class="star-label">${t('简历名称', 'Resume Name')}</div>
-            <input class="modal-input" id="rn_name" placeholder="${t('例：Google L5 简历 2024', 'e.g. Google L5 Resume 2024')}" style="width:100%;margin-bottom:0">
+            <input class="modal-input" id="rn_name" placeholder="${t('例：SDE 实习简历 2027', 'e.g. SDE Intern Resume 2027')}" style="width:100%;margin-bottom:0">
           </div>
           <div class="star-section">
             <div class="star-label">${t('上传文件', 'Upload File')}
@@ -256,7 +257,7 @@ export async function submitResume() {
   const bh = getBh()
   let bullets = []
   try {
-    const sys = `Extract experience bullet points from this resume, grouped by role/company/project. Return ONLY a valid JSON array: [{"role":"Senior SWE at Company (2021-2024)","bullets":["bullet 1","bullet 2"]}]. Include all experience bullets; skip education and skills sections.`
+    const sys = `Extract experience bullet points from this resume, grouped by role/company/project. Return ONLY a valid JSON array: [{"role":"Project or Role, e.g. \"Distributed Key-Value Store (project)\" or \"UX Designer at Company (2021-2024)\"","bullets":["bullet 1","bullet 2"]}]. Include bullets from work experience AND technical/academic projects; skip education and skills sections.`
     const raw = await claudeJSON(sys, `Resume:\n\n${text}`, 3000, '[')
     JSON.parse(raw).forEach(g => {
       ;(g.bullets || []).forEach(txt => {
@@ -369,7 +370,7 @@ export function renderBulletDetail() {
               </div>
               <div class="ans-actions" id="ans-actions-${q.id}">
                 <button class="btn-ans-action" onclick="polishAnswer('${resume.id}','${bullet.id}','${q.id}')">✨ ${t('润色回答', 'Polish Answer')}</button>
-                <button class="btn-ans-action btn-ans-analyze" onclick="analyzeAnswer('${resume.id}','${bullet.id}','${q.id}')">📊 ${t('L5 评估', 'L5 Analysis')}</button>
+                <button class="btn-ans-action btn-ans-analyze" onclick="analyzeAnswer('${resume.id}','${bullet.id}','${q.id}')">📊 ${t('面试评估', 'Interview Feedback')}</button>
               </div>
               ${q.polished ? `
                 <div class="ans-result-box ans-polished">
@@ -385,7 +386,7 @@ export function renderBulletDetail() {
               ${q.feedback ? `
                 <div class="ans-result-box ans-feedback">
                   <div class="ans-result-hd">
-                    <div class="ans-result-label">📊 ${t('L5 评估', 'L5 Analysis')}</div>
+                    <div class="ans-result-label">📊 ${t('面试评估', 'Interview Feedback')}</div>
                     <button class="ans-result-btn" onclick="var b=this.closest('.ans-result-box');b.classList.toggle('collapsed');this.textContent=b.classList.contains('collapsed')?'▸':'▾'">▾</button>
                   </div>
                   <div class="ans-result-text">${esc(q.feedback)}</div>
@@ -404,7 +405,7 @@ export async function generateBulletQs(resumeId, bulletId) {
   if (!bullet) return
   showLoading(t('正在生成主管追问…', 'Generating HM questions…'), t('正在准备针对该经历的深度追问', 'Preparing deep-dive questions about this experience'))
   try {
-    const sys = `You are a senior engineering manager at Google conducting an L5 SWE hiring manager interview. Generate exactly 5 deep-dive questions about this specific experience bullet. Each question must probe a different dimension: (1) technical depth & decision rationale, (2) scope of impact & cross-functional influence, (3) handling ambiguity or tradeoffs, (4) leadership or influence without authority, (5) reflection — what they would do differently and what they learned. Return ONLY a JSON array of 5 question strings.`
+    const sys = `You are a software engineer interviewing a ${TARGET.role} candidate, doing a resume deep dive. Generate exactly 5 deep-dive questions about this specific experience bullet. Each question must probe a different dimension: (1) technical depth — how it works under the hood and why they chose this approach, (2) their personal contribution versus the team's or tools', (3) a hard bug or obstacle and how they debugged it, (4) trade-offs and alternatives they considered, (5) reflection — what they learned and what they would do differently. Questions should be answerable by a strong intern candidate; do not ask about managing people or org-wide influence.\n\n${TARGET_BAR}\n\nReturn ONLY a JSON array of 5 question strings.`
     const raw = await claudeJSON(sys, `Role: ${bullet.role}\nExperience bullet: "${bullet.text}"`, 800, '[')
     const qs = JSON.parse(raw)
     bullet.hmQuestions = qs.map(q => ({ id: uid(), text: typeof q === 'string' ? q : String(q), answer: '' }))
@@ -448,7 +449,7 @@ export async function polishAnswer(resumeId, bulletId, questionId) {
       + '</div>')
   }
   try {
-    const sys = `You are a senior Google L5 SWE interview coach helping a candidate nail a hiring manager interview. Polish the candidate's answer to be crisp, first-person, impact-forward, and L5-appropriate. Rules: use "I" not "we"; lead with the most impactful point; be specific and include any metrics mentioned; cut filler words; keep it under 150 words. Return ONLY the polished answer text with no preamble.`
+    const sys = `You are an interview coach helping a ${TARGET.role} candidate answer a resume deep-dive question. Polish the candidate's answer to be crisp, first-person, and technically specific. Rules: use "I" not "we"; lead with the most impactful point; be specific and include any metrics mentioned; cut filler words; keep it under 150 words. Return ONLY the polished answer text with no preamble.`
     q.polished = await claudeStream(
       sys,
       `Experience bullet: "${bullet.text}"\n\nQuestion: ${q.text}\n\nCandidate answer: ${q.answer}`,
@@ -484,15 +485,19 @@ export async function analyzeAnswer(resumeId, bulletId, questionId) {
     qItem2.querySelectorAll('.ans-feedback').forEach(el => el.remove())
     qItem2.insertAdjacentHTML('beforeend',
       '<div class="ans-result-box ans-feedback" id="stream-box-analysis-' + questionId + '">'
-      + '<div class="ans-result-hd"><div class="ans-result-label">📊 ' + t('L5 评估', 'L5 Analysis') + '</div></div>'
+      + '<div class="ans-result-hd"><div class="ans-result-label">📊 ' + t('面试评估', 'Interview Feedback') + '</div></div>'
       + '<div class="ans-result-text stream-active" id="stream-text-analysis-' + questionId + '"></div>'
       + '</div>')
   }
   try {
-    const sys = `You are a Google L5 SWE hiring manager evaluating a candidate's answer against the L5 bar. Give honest, actionable feedback in exactly 3 labeled bullet points:
-• Strengths: what works well (specificity, impact, leadership signal)
-• Gaps: what's missing or weak (push for more depth, metrics, ownership, cross-team influence)
-• Verdict: one sentence — does this clear the L5 bar, and what's the biggest thing to fix?
+    const sys = `You are an interviewer evaluating a ${TARGET.role} candidate's answer against the intern bar.
+
+${TARGET_BAR}
+
+Give honest, actionable feedback in exactly 3 labeled bullet points:
+• Strengths: what works well (technical specificity, clear personal contribution, reasoning)
+• Gaps: what's missing or weak (push for how it works, why this approach, what they personally did, results or metrics)
+• Verdict: one sentence — does this clear the intern bar, and what's the biggest thing to fix?
 Be direct. No preamble, no sign-off.`
     q.feedback = await claudeStream(
       sys,

@@ -3,17 +3,20 @@ import { invoke } from '@tauri-apps/api/core'
 import { t } from './i18n.js'
 import { updateLoading } from './util.js'
 import { claude } from './api.js'
+import { TARGET, TARGET_BAR_ZH } from './target.js'
 
 // Cap paste/file content to avoid blowing the context window.
 // URL content is already capped at 12 000 chars by the Rust fetch_url command.
 const PASTE_CAP = 25_000
 
 export async function buildAnalysis(name, url, pasteContent = '') {
-  const sys = `你是一名资深 Google L5 工程师，正在为备考 L5 系统设计面试的候选人撰写中文学习笔记。
+  const sys = `你是一名经验丰富的软件工程师兼面试官，正在为备考${TARGET.roleZh}面试的候选人撰写中文学习笔记。
+
+${TARGET_BAR_ZH}
 
 【核心原则】：
-- 面试考察的是架构思维、系统权衡和工程判断，不是写代码的能力
-- 重点解释「为什么这样设计」，而不是「怎么实现」
+- 先讲清楚「它是什么、解决什么问题」，再讲「为什么这样设计」和关键权衡
+- 从基础原理讲起，循序渐进，让有扎实 CS 基础但缺少工业经验的候选人能读懂
 - 所有输出使用中文（技术术语、组件名、配置参数除外）
 - 使用 Markdown 格式：多用对比表格、ASCII 架构图、编号步骤
 - 代码规则：仅在必须说明关键算法思路时，用 5 行以内的伪代码；禁止粘贴完整类/函数实现
@@ -47,7 +50,7 @@ export async function buildAnalysis(name, url, pasteContent = '') {
 
 ## 🔑 核心概念与术语词典
 列出文档中出现的**所有**重要技术术语（不限数量）。
-每条格式：**术语** — 精确定义（1-2句）+ 它在系统中的作用 + 为什么 L5 候选人必须掌握它。
+每条格式：**术语** — 精确定义（1-2句）+ 它在系统中的作用 + 为什么面试中可能会被问到。
 
 ## 🏗️ 系统架构
 - 用 ASCII art 或分层文字描述整体架构（组件、层次、边界）
@@ -81,17 +84,17 @@ export async function buildAnalysis(name, url, pasteContent = '') {
 
 ## ⚖️ 与替代方案的横向对比
 创建对比表格，列：方案 | 适用场景 | 核心优势 | 核心劣势 | 典型生产案例
-涵盖文档中提到的所有替代方案，以及 L5 面试中必须了解的相关技术。
+涵盖文档中提到的所有替代方案，以及面试中常被拿来比较的相关技术。
 
 ## 🔧 适用场景与反模式
 - 最适合的场景（附理由）
 - 不应使用的场景（附理由）
 - Google/Netflix/Amazon 等公司的真实使用案例`, 6000),
 
-    // ── Part 3: Best Practices + Pitfalls + L5 Exam Focus + Q&A ─────────────
+    // ── Part 3: Best Practices + Pitfalls + Interview Focus + Q&A ───────────
     claude(sys,
       context +
-      `请为「${name}」撰写学习笔记第三部分。聚焦实战经验和 L5 面试应对。
+      `请为「${name}」撰写学习笔记第三部分。聚焦实战经验和实习面试应对。
 
 ## ✅ 最佳实践
 用 bullet list 列出所有重要最佳实践（配置选项、使用模式、容量规划、监控运维）。
@@ -101,14 +104,14 @@ export async function buildAnalysis(name, url, pasteContent = '') {
 编号列表，格式：**陷阱名** — 描述问题 + 说明后果 + 给出正确做法。
 包含：配置错误、性能陷阱、一致性误解、运维盲区、常见面试误答。
 
-## 🎯 L5 面试考点精析
-列出所有 L5 面试中可能考察的知识点（不限数量）。
-格式：**考点** → 面试官期望的回答深度 + 需要体现的 L5 视角（系统权衡、规模化、故障处理）。
+## 🎯 实习面试考点精析
+列出所有实习面试中可能考察的知识点（不限数量）。
+格式：**考点** → 面试官对实习生期望的回答深度 + 如何结合自己的项目经验作答。
 
 ## 💬 模拟面试 Q&A（5题）
-提供 5 道典型 L5 系统设计面试问题 + 示范回答。
-每道回答结构：核心答案（1-2句）→ 关键权衡 → L5 深度补充。
-回答聚焦架构判断和权衡分析，不写代码。`, 6000),
+提供 5 道典型实习面试问题（概念理解题 + 「你在项目中为什么用它」式的追问）+ 示范回答。
+每道回答结构：核心答案（1-2句）→ 关键原理或权衡 → 可加分的深入补充。
+回答聚焦原理理解和清晰表达，不写大段代码。`, 6000),
   ])
 
   return p1 + '\n\n---\n\n' + p2 + '\n\n---\n\n' + p3
